@@ -17,7 +17,7 @@ cd ./build
 if not exist intermediates mkdir intermediates
 cd ./intermediates
 
-for /R ../../src/ %%I in (*.cpp) do %CLANG% %INCLUDEDIRS% -c %%I %DEFINES% %FLAGS% -o ./%%~nI.o
+for /R ../../src/ %%I in (*.cpp) do %CLANG% %INCLUDEDIRS% -c %%I %DEFINES% %FLAGS% -o ./%%~nI.o || exit
 
 cd ..
 
