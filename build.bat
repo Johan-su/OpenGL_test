@@ -21,4 +21,4 @@ for /R ../../src/ %%I in (*.cpp) do %CLANG% %INCLUDEDIRS% -c %%I %DEFINES% %FLAG
 
 cd ..
 
-%CLANG% %LIBDIRS% %LIBS% ./intermediates/*.o -o opengl_test.exe
+%CLANG% %LIBDIRS% %LIBS% -g ./intermediates/*.o -o opengl_test.exe
