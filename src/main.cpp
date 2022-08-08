@@ -10,9 +10,7 @@
 
 #include "int.hpp"
 
-#include "VertexBuffer.hpp"
-#include "IndexBuffer.hpp"
-#include "Shader.hpp"
+#include "Renderer.hpp"
 
 static void opengl_debug_callback(GLenum source,
             GLenum type,
@@ -56,6 +54,8 @@ int main(void) //TODO:(Johan) finish
         return -1;
     }
 
+    
+
     /* Make the window's context current */
     glfwMakeContextCurrent(window);
 
@@ -71,11 +71,11 @@ int main(void) //TODO:(Johan) finish
 
     printf("%s\n", glGetString(GL_VERSION));
 
-    float vertex_buffer[] = {
-        -0.5f, -0.5f,
-         0.5f, -0.5f,
-         0.5f,  0.5f,
-        -0.5f,  0.5f,
+    float vertex_data[] = {
+        -0.5f, -0.5f, 0.0f, 0.0f,
+         0.5f, -0.5f, 1.0f, 0.0f,
+         0.5f,  0.5f, 1.0f, 1.0f,
+        -0.5f,  0.5f, 0.0f, 1.0f,
     };
 
     U32 indicies[] = {
@@ -84,20 +84,47 @@ int main(void) //TODO:(Johan) finish
     };
 
 
-    U32 vao;
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    glGenVertexArrays(1, &vao);
-    glBindVertexArray(vao);
+    VertexArray va;
 
-
-    VertexBuffer vb = VertexBuffer(vertex_buffer, 4 * 2 * sizeof(float), GL_STATIC_DRAW);
-
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), 0);
+    init(&va);
+    bind(&va);
 
 
-    IndexBuffer ib = IndexBuffer(indicies, 6, GL_STATIC_DRAW);
-    Shader shader = Shader("assets/shaders/basic.vert", "assets/shaders/basic.frag");
+
+    VertexBuffer vb;
+
+    init(&vb, vertex_data, 4 * 4 * sizeof(float), GL_STATIC_DRAW);
+
+    VertexBufferLayout layout;
+
+    init(&layout);
+
+
+    push_type_float(&layout, 2, GL_FALSE);
+    push_type_float(&layout, 2, GL_FALSE);
+
+    add_buffer_to_array(&va, &vb, &layout);
+
+
+
+    IndexBuffer ib;
+    init(&ib, indicies, 6, GL_STATIC_DRAW);
+
+    Shader shader;
+
+    init(&shader, "assets/shaders/basic.vert", "assets/shaders/basic.frag");
+
+    Texture texture;
+    init(&texture, "assets/images/placeholder.png");
+    int slot = 0;
+
+    bind(&texture, slot);
+    bind(&shader);
+
+    set_uniform1i(&shader, "u_Texture", slot);
 
 
     float rgba[4] = {
@@ -109,26 +136,21 @@ int main(void) //TODO:(Johan) finish
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
     {
-
-        
         //rgba[0] = (float)(rand()) / RAND_MAX;
         //rgba[1] = (float)(rand()) / RAND_MAX;
         rgba[2] = (float)(rand()) / RAND_MAX;
         //rgba[3] = (float)(rand()) / RAND_MAX;
 
         /* Render here */
-        glClear(GL_COLOR_BUFFER_BIT);
+        Renderer::clear();
 
 
 
-        shader.bind();
-        shader.set_uniform4f("u_Color", rgba[0], rgba[1], rgba[2], rgba[3]);
+        bind(&shader);
+        set_uniform4f(&shader, "u_Color", rgba[0], rgba[1], rgba[2], rgba[3]);
 
-        glBindVertexArray(vao);
+        Renderer::draw(&va, &ib, &shader);
 
-        ib.bind();
-
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, NULL);
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
 
@@ -137,6 +159,11 @@ int main(void) //TODO:(Johan) finish
     }
 
 
+    clean(&va);
+    clean(&vb);
+    clean(&ib);
+    clean(&shader);
+    clean(&texture);
 
     glfwTerminate();
     return 0;
